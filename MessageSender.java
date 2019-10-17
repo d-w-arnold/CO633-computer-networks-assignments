@@ -81,7 +81,16 @@ public class MessageSender
         // YOUR CODE SHOULD START HERE ---------------------------------
         // No changes are needed to the statements above
 
-
+        ArrayList<String> frames = new ArrayList<>();
+        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + 2 + fieldDelimiter.length();
+        int suffixLen = fieldDelimiter.length() + 2 + endFrame.length();
+        int maxMessSegLen = mtu - prefixLen - suffixLen;
+        while (message.length() > maxMessSegLen) {
+            String tmp = message.substring(0, maxMessSegLen);
+            frames.add(createFrame(tmp, frameType));
+            message = message.substring(maxMessSegLen);
+        }
+        frames.add(createFrame(message, frameTypeEnd));
 
         // The following statement shows how the frame sender is invoked.
         // At the moment it just passes a fixed string.
@@ -91,7 +100,9 @@ public class MessageSender
         // for each frame in turn.  See the coursework specification
         // and other class documentation for further info.
 
-        physicalLayer.sendFrame(createFrame(message));
+        for (String frame : frames) {
+            physicalLayer.sendFrame(frame);
+        }
 
 
 
@@ -106,9 +117,9 @@ public class MessageSender
 
     // You may add private methods if you wish
 
-    private String createFrame(String message)
+    private String createFrame(String message, String frmType)
     {
-        String arithSum = frameTypeEnd + fieldDelimiter + genSegLength(message) + fieldDelimiter + message + fieldDelimiter;
+        String arithSum = frmType + fieldDelimiter + genSegLength(message) + fieldDelimiter + message + fieldDelimiter;
         return startFrame + arithSum + genChecksum(arithSum) + endFrame;
     }
 
