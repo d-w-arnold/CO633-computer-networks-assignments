@@ -1,5 +1,7 @@
 // MessageSender.java - PARTIAL IMPLEMENTATION
 
+import java.util.ArrayList;
+
 /**
  * This class implements the sender side of the data link layer.
  * <P>
@@ -12,6 +14,9 @@
  * method.  Do NOT put this class inside a package.  You may add new
  * private methods, if you wish, but do NOT create any new classes. 
  * Only this file will be processed when your work is marked.
+ *
+ * @author David W. Arnold
+ * @version 17th Oct 2019
  */
 
 public class MessageSender
@@ -24,6 +29,12 @@ public class MessageSender
 
     // DO NOT ADD ANY MORE INSTANCE VARIABLES
     // but it's okay to define constants here
+
+    private final String startFrame = "<";
+    private final String frameType = "D";
+    private final String frameTypeEnd = "E";
+    private final String fieldDelimiter = "-";
+    private final String endFrame = ">";
 
     // Constructor -----------------------------------------------------
 
@@ -80,7 +91,7 @@ public class MessageSender
         // for each frame in turn.  See the coursework specification
         // and other class documentation for further info.
 
-        physicalLayer.sendFrame("sendMessage not yet implemented!");
+        physicalLayer.sendFrame(createFrame(message));
 
 
 
@@ -95,6 +106,30 @@ public class MessageSender
 
     // You may add private methods if you wish
 
+    private String createFrame(String message)
+    {
+        String arithSum = frameTypeEnd + fieldDelimiter + genSegLength(message) + fieldDelimiter + message + fieldDelimiter;
+        return startFrame + arithSum + genChecksum(arithSum) + endFrame;
+    }
+
+    private String genSegLength(String seg)
+    {
+        int len = seg.length();
+        String segLength = Integer.toString(len);
+        if (len < 10) {
+            segLength = "0" + segLength;
+        }
+        return segLength;
+    }
+
+    private String genChecksum(String string)
+    {
+        int total = 0;
+        for (char character : string.toCharArray()) {
+            total += character;
+        }
+        return Integer.toString(total).substring(Integer.toString(total).length() - 2);
+    }
 
 } // end of class MessageSender
 
