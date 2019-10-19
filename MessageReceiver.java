@@ -10,8 +10,11 @@
  * method to complete this class.  No other parts of this file need to
  * be changed.  Do NOT alter the constructor or interface of any public
  * method.  Do NOT put this class inside a package.  You may add new
- * private methods, if you wish, but do NOT create any new classes. 
+ * private methods, if you wish, but do NOT create any new classes.
  * Only this file will be processed when your work is marked.
+ *
+ * @author David W. Arnold
+ * @version 18th Oct 2019
  */
 
 public class MessageReceiver
@@ -24,6 +27,14 @@ public class MessageReceiver
 
     // DO NOT ADD ANY MORE INSTANCE VARIABLES
     // but it's okay to define constants here
+
+    private final String startFrame = "<";
+    private final String frameType = "D";
+    private final String frameTypeEnd = "E";
+    private final int segLenLen = 2;
+    private final String fieldDelimiter = "-";
+    private final int checksumLen = 2;
+    private final String endFrame = ">";
 
     // Constructor -----------------------------------------------------
 
@@ -75,7 +86,8 @@ public class MessageReceiver
         // YOUR CODE SHOULD START HERE ---------------------------------
         // No changes are needed to the statements above
 
-
+        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + 2 + fieldDelimiter.length();
+        int suffixLen = fieldDelimiter.length() + 2 + endFrame.length();
 
         // The following block of statements shows how the frame receiver
         // is invoked.  At the moment it just sets the message equal to
@@ -90,8 +102,26 @@ public class MessageReceiver
         // See the coursework specification and other class documentation
         // for further info.
 
-        String frame = physicalLayer.receiveFrame();
-        message = frame;
+//        String frame = physicalLayer.receiveFrame();
+//        message = frame;
+
+        boolean receiving = true;
+        while (receiving) {
+            String frame = physicalLayer.receiveFrame();
+            String prefix = frame.substring(0, prefixLen);
+            String suffix = frame.substring(frame.length() - suffixLen);
+            String frmType = getFrmType(frame);
+            String segLen = getSegLen(prefix, prefixLen);
+            String messSeg = getMessage(frame, prefixLen, suffixLen);
+            if (segLenCorrect(segLen, messSeg) && checkSumCorrect(frmType, segLen, messSeg, getChecksum(suffix, suffixLen))) {
+                message += messSeg;
+                if (frmType.equals(frameTypeEnd)) {
+                    receiving = false;
+                }
+            } else {
+                // Frame is corrupted, either segment length or checksum is incorrect.
+            }
+        }
 
 
 
@@ -110,6 +140,45 @@ public class MessageReceiver
 
     // You may add private methods if you wish
 
+    private String getFrmType(String frame)
+    {
+        return frame.substring(startFrame.length(), startFrame.length() + frameType.length());
+    }
+
+    private String getMessage(String frame, int prefixLen, int suffixLen)
+    {
+        return frame.substring(prefixLen, frame.length() - suffixLen);
+    }
+
+    private String getSegLen(String prefix, int prefixLen)
+    {
+        return prefix.substring(prefixLen - segLenLen - fieldDelimiter.length(), prefixLen - fieldDelimiter.length());
+    }
+
+    private String getChecksum(String suffix, int suffixLen)
+    {
+        return suffix.substring(suffixLen - checksumLen - fieldDelimiter.length(), suffixLen - fieldDelimiter.length());
+    }
+
+    private boolean segLenCorrect(String segLen, String messSeg)
+    {
+        return Integer.parseUnsignedInt(segLen) == messSeg.length();
+    }
+
+    private boolean checkSumCorrect(String frmType, String segLen, String messSeg, String checksum)
+    {
+        String arithSum = frmType + fieldDelimiter + segLen + fieldDelimiter + messSeg + fieldDelimiter;
+        return genChecksum(arithSum).equals(checksum);
+    }
+
+    private String genChecksum(String string)
+    {
+        int total = 0;
+        for (char character : string.toCharArray()) {
+            total += character;
+        }
+        return Integer.toString(total).substring(Integer.toString(total).length() - 2);
+    }
 
 } // end of class MessageReceiver
 
