@@ -33,7 +33,9 @@ public class MessageSender
     private final String startFrame = "<";
     private final String frameType = "D";
     private final String frameTypeEnd = "E";
+    private final int segLenLen = 2;
     private final String fieldDelimiter = "-";
+    private final int checksumLen = 2;
     private final String endFrame = ">";
 
     // Constructor -----------------------------------------------------
@@ -82,8 +84,8 @@ public class MessageSender
         // No changes are needed to the statements above
 
         ArrayList<String> frames = new ArrayList<>();
-        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + 2 + fieldDelimiter.length();
-        int suffixLen = fieldDelimiter.length() + 2 + endFrame.length();
+        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
+        int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
         int maxMessSegLen = mtu - prefixLen - suffixLen;
         while (message.length() > maxMessSegLen) {
             String tmp = message.substring(0, maxMessSegLen);
