@@ -88,6 +88,9 @@ public class MessageReceiver
 
         int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + 2 + fieldDelimiter.length();
         int suffixLen = fieldDelimiter.length() + 2 + endFrame.length();
+        if ((mtu - prefixLen - suffixLen) < 1) {
+            throw new ProtocolException("In order to receive a frame, the MTU needs to be greater than : " + (prefixLen + suffixLen));
+        }
 
         // The following block of statements shows how the frame receiver
         // is invoked.  At the moment it just sets the message equal to
@@ -101,9 +104,6 @@ public class MessageReceiver
         // 
         // See the coursework specification and other class documentation
         // for further info.
-
-//        String frame = physicalLayer.receiveFrame();
-//        message = frame;
 
         boolean receiving = true;
         while (receiving) {

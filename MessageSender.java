@@ -87,6 +87,9 @@ public class MessageSender
         int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
         int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
         int maxMessSegLen = mtu - prefixLen - suffixLen;
+        if (maxMessSegLen < 1) {
+            throw new ProtocolException("In order to send a frame, the MTU needs to be greater than : " + (prefixLen + suffixLen));
+        }
         while (message.length() > maxMessSegLen) {
             String tmp = message.substring(0, maxMessSegLen);
             frames.add(createFrame(tmp, frameType));
