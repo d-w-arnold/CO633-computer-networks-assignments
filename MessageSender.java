@@ -37,6 +37,7 @@ public class MessageSender
     private final String fieldDelimiter = "-";
     private final int checksumLen = 2;
     private final String endFrame = ">";
+    private final int maximumMessage = 99;
 
     // Constructor -----------------------------------------------------
 
@@ -83,14 +84,14 @@ public class MessageSender
         // YOUR CODE SHOULD START HERE ---------------------------------
         // No changes are needed to the statements above
 
-        // TODO: Message segment must not exceed 99 irrespective of MTU.
-
         ArrayList<String> frames = new ArrayList<>();
         int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
         int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
         int maxMessSegLen = mtu - prefixLen - suffixLen;
         if (maxMessSegLen < 0) {
             throw new ProtocolException("MTU not large enough for sending a frame with an empty message segment");
+        } else if (maxMessSegLen > maximumMessage) {
+            maxMessSegLen = maximumMessage;
         }
         while (message.length() > maxMessSegLen) {
             String tmp = message.substring(0, maxMessSegLen);
