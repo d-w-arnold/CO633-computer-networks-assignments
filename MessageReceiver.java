@@ -119,7 +119,7 @@ public class MessageReceiver
                     receiving = false;
                 }
             } else {
-                // Frame is corrupted, either segment length or checksum is incorrect.
+                throw new ProtocolException("Frame is corrupted, either segment length or checksum is incorrect.");
             }
         }
 
