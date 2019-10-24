@@ -86,10 +86,12 @@ public class MessageReceiver
         // YOUR CODE SHOULD START HERE ---------------------------------
         // No changes are needed to the statements above
 
-        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + 2 + fieldDelimiter.length();
-        int suffixLen = fieldDelimiter.length() + 2 + endFrame.length();
-        if ((mtu - prefixLen - suffixLen) < 1) {
-            throw new ProtocolException("In order to receive a frame, the MTU needs to be greater than : " + (prefixLen + suffixLen));
+        // TODO: Message segment must not exceed 99 irrespective of MTU.
+
+        int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
+        int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
+        if ((mtu - prefixLen - suffixLen) < 0) {
+            throw new ProtocolException("MTU not large enough for receiving a frame with an empty message segment");
         }
 
         // The following block of statements shows how the frame receiver
@@ -108,11 +110,21 @@ public class MessageReceiver
         boolean receiving = true;
         while (receiving) {
             String frame = physicalLayer.receiveFrame();
+            int frameLen = frame.length();
+            if (frameLen < (prefixLen + suffixLen)) { // If the length of the frame is too short
+                throw new ProtocolException("Frame not large enough for receiving a frame with an empty message segment");
+            }
+            if (frameLen > mtu) { // If the length of the frame is too long
+                throw new ProtocolException("Frame length exceeds MTU");
+            }
             String prefix = frame.substring(0, prefixLen);
-            String suffix = frame.substring(frame.length() - suffixLen);
-            String frmType = getFrmType(frame);
+            String suffix = frame.substring(frameLen - suffixLen);
+            if (!correctFrameFormat(frame, prefix, prefixLen, suffix, suffixLen)) { // Check formatting of frame
+                throw new ProtocolException("Invalid frame format");
+            }
+            String frmType = getFrmType(prefix);
             String segLen = getSegLen(prefix, prefixLen);
-            String messSeg = getMessage(frame, prefixLen, suffixLen);
+            String messSeg = getMessSeg(frame, prefixLen, suffixLen);
             boolean sl = segLenCorrect(segLen, messSeg);
             boolean ch = checkSumCorrect(frmType, messSeg, getChecksum(suffix, suffixLen));
             if (!sl || !ch) {
@@ -148,12 +160,51 @@ public class MessageReceiver
 
     // You may add private methods if you wish
 
-    private String getFrmType(String frame)
+    private boolean correctFrameFormat(String frame, String prefix, int prefixLen, String suffix, int suffixLen)
     {
-        return frame.substring(startFrame.length(), startFrame.length() + frameType.length());
+        if (!correctPrefixFormat(prefix, prefixLen)) { // Check prefix is correct
+            return false;
+        } else if (!correctSuffixFormat(suffix, suffixLen)) { // Check suffix is correct
+            return false;
+        }
+        return true;
     }
 
-    private String getMessage(String frame, int prefixLen, int suffixLen)
+    private boolean correctPrefixFormat(String prefix, int prefixLen)
+    {
+        String frmType = getFrmType(prefix);
+        String firstDelimiter = prefix.substring(prefix.length() - segLenLen - (2 * fieldDelimiter.length()), prefix.length() - segLenLen - fieldDelimiter.length());
+        String secondDelimiter = prefix.substring(prefix.length() - fieldDelimiter.length());
+        if (prefix.length() != prefixLen) { // Correct length
+            return false;
+        } else if (!prefix.substring(0, startFrame.length()).equals(startFrame)) { // <
+            return false;
+        } else if (!frmType.equals(frameType) && !frmType.equals(frameTypeEnd)) { // E or D
+            return false;
+        } else if (!firstDelimiter.equals(fieldDelimiter) || !secondDelimiter.equals(fieldDelimiter)) { // -??-
+            return false;
+        }
+        return true;
+    }
+
+    private boolean correctSuffixFormat(String suffix, int suffixLen)
+    {
+        String delimiter = suffix.substring(0, fieldDelimiter.length());
+        String endF = suffix.substring(suffix.length() - endFrame.length());
+        if (suffix.length() != suffixLen) { // Correct length
+            return false;
+        } else if (!delimiter.equals(fieldDelimiter) || !endF.equals(endFrame)) { // -??>
+            return false;
+        }
+        return true;
+    }
+
+    private String getFrmType(String prefix)
+    {
+        return prefix.substring(startFrame.length(), startFrame.length() + frameType.length());
+    }
+
+    private String getMessSeg(String frame, int prefixLen, int suffixLen)
     {
         return frame.substring(prefixLen, frame.length() - suffixLen);
     }
@@ -168,15 +219,27 @@ public class MessageReceiver
         return suffix.substring(suffixLen - checksumLen - fieldDelimiter.length(), suffixLen - fieldDelimiter.length());
     }
 
-    private boolean segLenCorrect(String segLen, String messSeg)
+    private boolean segLenCorrect(String segLen, String messSeg) throws ProtocolException
     {
-        return Integer.parseUnsignedInt(segLen) == messSeg.length();
+        int messSegLen;
+        try {
+            messSegLen = Integer.parseUnsignedInt(segLen);
+        } catch (Exception e) {
+            throw new ProtocolException("Segment length not 2-digit decimal");
+        }
+        return messSegLen == messSeg.length();
     }
 
-    private boolean checkSumCorrect(String frmType, String messSeg, String checksum)
+    private boolean checkSumCorrect(String frmType, String messSeg, String checksum) throws ProtocolException
     {
+        int ch;
+        try {
+            ch = Integer.parseUnsignedInt(checksum);
+        } catch (Exception e) {
+            throw new ProtocolException("Checksum not 2-digit decimal");
+        }
         String arithSum = frmType + fieldDelimiter + genSegLength(messSeg) + fieldDelimiter + messSeg + fieldDelimiter;
-        return genChecksum(arithSum).equals(checksum);
+        return Integer.parseUnsignedInt(genChecksum(arithSum)) == ch;
     }
 
     private String genSegLength(String seg)
