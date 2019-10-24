@@ -89,7 +89,7 @@ public class MessageSender
         int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
         int maxMessSegLen = mtu - prefixLen - suffixLen;
         if (maxMessSegLen < 0) {
-            throw new ProtocolException("MTU not large enough for sending a frame with an empty message segment");
+            throw new ProtocolException("MTU not large enough for sending a frame with an empty message segment.");
         } else if (maxMessSegLen > maximumMessage) {
             maxMessSegLen = maximumMessage;
         }

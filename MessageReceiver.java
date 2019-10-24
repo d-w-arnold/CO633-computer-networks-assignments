@@ -35,6 +35,7 @@ public class MessageReceiver
     private final String fieldDelimiter = "-";
     private final int checksumLen = 2;
     private final String endFrame = ">";
+    private final int maximumMessage = 99;
 
     // Constructor -----------------------------------------------------
 
@@ -86,12 +87,15 @@ public class MessageReceiver
         // YOUR CODE SHOULD START HERE ---------------------------------
         // No changes are needed to the statements above
 
-        // TODO: Message segment must not exceed 99 irrespective of MTU.
-
         int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
         int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
-        if ((mtu - prefixLen - suffixLen) < 0) {
-            throw new ProtocolException("MTU not large enough for receiving a frame with an empty message segment");
+        int maxMessSegLen = mtu - prefixLen - suffixLen;
+        boolean irrMtu = false;
+        if (maxMessSegLen < 0) {
+            throw new ProtocolException("MTU not large enough for receiving a frame with an empty message segment.");
+        } else if (maxMessSegLen > maximumMessage) {
+            maxMessSegLen = maximumMessage;
+            irrMtu = true;
         }
 
         // The following block of statements shows how the frame receiver
@@ -112,15 +116,19 @@ public class MessageReceiver
             String frame = physicalLayer.receiveFrame();
             int frameLen = frame.length();
             if (frameLen < (prefixLen + suffixLen)) { // If the length of the frame is too short
-                throw new ProtocolException("Frame not large enough for receiving a frame with an empty message segment");
+                throw new ProtocolException("Frame length too short, not even long enough for receiving a frame with an empty message segment.");
             }
-            if (frameLen > mtu) { // If the length of the frame is too long
-                throw new ProtocolException("Frame length exceeds MTU");
+            if (frameLen > (maxMessSegLen + prefixLen + suffixLen)) { // If the length of the frame is too long
+                if (irrMtu) {
+                    throw new ProtocolException("Frame length too long, irrespective of MTU.");
+                } else {
+                    throw new ProtocolException("Frame length too long, exceeds MTU.");
+                }
             }
             String prefix = frame.substring(0, prefixLen);
             String suffix = frame.substring(frameLen - suffixLen);
             if (!correctFrameFormat(frame, prefix, prefixLen, suffix, suffixLen)) { // Check formatting of frame
-                throw new ProtocolException("Invalid frame format");
+                throw new ProtocolException("Invalid frame format.");
             }
             String frmType = getFrmType(prefix);
             String segLen = getSegLen(prefix, prefixLen);
@@ -225,7 +233,7 @@ public class MessageReceiver
         try {
             messSegLen = Integer.parseUnsignedInt(segLen);
         } catch (Exception e) {
-            throw new ProtocolException("Segment length not 2-digit decimal");
+            throw new ProtocolException("Segment length not 2-digit decimal.");
         }
         return messSegLen == messSeg.length();
     }
@@ -236,7 +244,7 @@ public class MessageReceiver
         try {
             ch = Integer.parseUnsignedInt(checksum);
         } catch (Exception e) {
-            throw new ProtocolException("Checksum not 2-digit decimal");
+            throw new ProtocolException("Checksum not 2-digit decimal.");
         }
         String arithSum = frmType + fieldDelimiter + genSegLength(messSeg) + fieldDelimiter + messSeg + fieldDelimiter;
         return Integer.parseUnsignedInt(genChecksum(arithSum)) == ch;
