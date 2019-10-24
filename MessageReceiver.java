@@ -114,7 +114,7 @@ public class MessageReceiver
             String segLen = getSegLen(prefix, prefixLen);
             String messSeg = getMessage(frame, prefixLen, suffixLen);
             boolean sl = segLenCorrect(segLen, messSeg);
-            boolean ch = checkSumCorrect(frmType, segLen, messSeg, getChecksum(suffix, suffixLen));
+            boolean ch = checkSumCorrect(frmType, messSeg, getChecksum(suffix, suffixLen));
             if (!sl || !ch) {
                 if (!sl && !ch) {
                     throw new ProtocolException("Segment length and checksum are both incorrect.");
@@ -173,10 +173,20 @@ public class MessageReceiver
         return Integer.parseUnsignedInt(segLen) == messSeg.length();
     }
 
-    private boolean checkSumCorrect(String frmType, String segLen, String messSeg, String checksum)
+    private boolean checkSumCorrect(String frmType, String messSeg, String checksum)
     {
-        String arithSum = frmType + fieldDelimiter + segLen + fieldDelimiter + messSeg + fieldDelimiter;
+        String arithSum = frmType + fieldDelimiter + genSegLength(messSeg) + fieldDelimiter + messSeg + fieldDelimiter;
         return genChecksum(arithSum).equals(checksum);
+    }
+
+    private String genSegLength(String seg)
+    {
+        int len = seg.length();
+        String segLength = Integer.toString(len);
+        if (len < 10) {
+            segLength = "0" + segLength;
+        }
+        return segLength;
     }
 
     private String genChecksum(String string)
