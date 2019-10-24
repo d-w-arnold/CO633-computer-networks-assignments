@@ -113,11 +113,17 @@ public class MessageReceiver
             String frmType = getFrmType(frame);
             String segLen = getSegLen(prefix, prefixLen);
             String messSeg = getMessage(frame, prefixLen, suffixLen);
-            if (!segLenCorrect(segLen, messSeg)) {
-                throw new ProtocolException("Segment length is incorrect.");
-            } else if (!checkSumCorrect(frmType, segLen, messSeg, getChecksum(suffix, suffixLen))) {
-                throw new ProtocolException("Checksum is incorrect.");
-            } else if (segLenCorrect(segLen, messSeg) && checkSumCorrect(frmType, segLen, messSeg, getChecksum(suffix, suffixLen))) {
+            boolean sl = segLenCorrect(segLen, messSeg);
+            boolean ch = checkSumCorrect(frmType, segLen, messSeg, getChecksum(suffix, suffixLen));
+            if (!sl || !ch) {
+                if (!sl && !ch) {
+                    throw new ProtocolException("Segment length and checksum are both incorrect.");
+                } else if (!sl) {
+                    throw new ProtocolException("Segment length is incorrect.");
+                } else {
+                    throw new ProtocolException("Checksum is incorrect.");
+                }
+            } else {
                 message += messSeg;
                 if (frmType.equals(frameTypeEnd)) {
                     receiving = false;
