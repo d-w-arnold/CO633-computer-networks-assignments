@@ -116,7 +116,7 @@ public class MessageReceiver
             String frame = physicalLayer.receiveFrame();
             int frameLen = frame.length();
             if (frameLen < (prefixLen + suffixLen)) { // If the length of the frame is too short
-                throw new ProtocolException("Frame length too short, not even long enough for receiving a frame with an empty message segment.");
+                throw new ProtocolException("Invalid frame format.");
             }
             if (frameLen > (maxMessSegLen + prefixLen + suffixLen)) { // If the length of the frame is too long
                 if (irrMtu) {
@@ -170,10 +170,26 @@ public class MessageReceiver
 
     private boolean correctFrameFormat(String frame, String prefix, int prefixLen, String suffix, int suffixLen)
     {
-        if (!correctPrefixFormat(prefix, prefixLen)) { // Check prefix is correct
+        if (!containsOnce(frame, startFrame) || !containsOnce(frame, endFrame)) {
+            return false;
+        } else if (!correctPrefixFormat(prefix, prefixLen)) { // Check prefix is correct
             return false;
         } else if (!correctSuffixFormat(suffix, suffixLen)) { // Check suffix is correct
             return false;
+        }
+        return true;
+    }
+
+    private boolean containsOnce(String frame, String substring)
+    {
+        int occurrences = 0;
+        for (Character c : frame.toCharArray()) {
+            if (substring.equals(Character.toString(c))) {
+                occurrences++;
+            }
+            if (occurrences > 1) {
+                return false;
+            }
         }
         return true;
     }
