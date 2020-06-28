@@ -1,11 +1,9 @@
-// MessageReceiver.java - PARTIAL IMPLEMENTATION
-
 /**
  * This class implements the receiver side of the data link layer.
- * <P>
+ * <p>
  * The source code supplied here only contains a partial implementation.
  * Your completed version must be submitted for assessment.
- * <P>
+ * <p>
  * You only need to finish the implementation of the receiveMessage
  * method to complete this class.  No other parts of this file need to
  * be changed.  Do NOT alter the constructor or interface of any public
@@ -16,76 +14,63 @@
  * @author David W. Arnold
  * @version 18th Oct 2019
  */
-
 public class MessageReceiver
 {
-    // Fields ----------------------------------------------------------
-
-    private int mtu;                      // maximum transfer unit (frame length limit)
-    private FrameReceiver physicalLayer;  // physical layer object
-    private TerminalStream terminal;      // terminal stream manager
-
-    // DO NOT ADD ANY MORE INSTANCE VARIABLES
-    // but it's okay to define constants here
-
     private final String startFrame = "<";
     private final String frameType = "D";
     private final String frameTypeEnd = "E";
+
+    // DO NOT ADD ANY MORE INSTANCE VARIABLES
+    // but it's okay to define constants here
     private final int segLenLen = 2;
     private final String fieldDelimiter = "-";
     private final int checksumLen = 2;
     private final String endFrame = ">";
     private final int maximumMessage = 99;
-
-    // Constructor -----------------------------------------------------
+    private int mtu;                      // maximum transfer unit (frame length limit)
+    private FrameReceiver physicalLayer;  // physical layer object
+    private TerminalStream terminal;      // terminal stream manager
 
     /**
      * MessageReceiver constructor - DO NOT ALTER ANY PART OF THIS
      * Create and initialize new MessageReceiver.
+     *
      * @param mtu the maximum transfer unit (MTU)
-     * (the length of a frame must not exceed the MTU)
+     *            (the length of a frame must not exceed the MTU)
      * @throws ProtocolException if error detected
      */
-
     public MessageReceiver(int mtu) throws ProtocolException
     {
         // Initialize fields
         // Create physical layer and terminal stream manager
-
         this.mtu = mtu;
         this.physicalLayer = new FrameReceiver();
         this.terminal = new TerminalStream("MessageReceiver");
         terminal.printlnDiag("data link layer ready (mtu = " + mtu + ")");
     }
 
-    // Methods ---------------------------------------------------------
-
     /**
      * Receive a single message - THIS IS THE ONLY METHOD YOU NEED TO MODIFY
+     *
      * @return the message received, or null if the end of the input
      * stream has been reached.  See receiveFrame documentation for
      * further explanation of how the end of the input stream is
      * detected and handled.
      * @throws ProtocolException immediately without attempting to
-     * receive any further frames if any error is detected, such as
-     * a corrupt frame, even if the end of the input stream has also
-     * been reached (signalling an error takes precedence over
-     * signalling the end of the input stream)
+     *                           receive any further frames if any error is detected, such as
+     *                           a corrupt frame, even if the end of the input stream has also
+     *                           been reached (signalling an error takes precedence over
+     *                           signalling the end of the input stream)
      */
-
     public String receiveMessage() throws ProtocolException
     {
         String message = "";    // whole of message as a single string
-                                // initialise to empty string
+        // initialise to empty string
 
         // Report action to terminal
         // Note the terminal messages aren't part of the protocol,
         // they're just included to help with testing and debugging
-
         terminal.printlnDiag("  receiveMessage starting");
-
-        // YOUR CODE SHOULD START HERE ---------------------------------
-        // No changes are needed to the statements above
 
         int prefixLen = startFrame.length() + frameType.length() + fieldDelimiter.length() + segLenLen + fieldDelimiter.length();
         int suffixLen = fieldDelimiter.length() + checksumLen + endFrame.length();
@@ -151,22 +136,14 @@ public class MessageReceiver
             }
         }
 
-
-
-        // YOUR CODE SHOULD FINISH HERE --------------------------------
-        // No changes are needed to the statements below
-
         // Return message
-
-        if (message == null)
+        if (message == null) {
             terminal.printlnDiag("  receiveMessage returning null (end of input stream)");
-        else
+        } else {
             terminal.printlnDiag("  receiveMessage returning \"" + message + "\"");
+        }
         return message;
-
-    } // end of method receiveMessage
-
-    // You may add private methods if you wish
+    }
 
     private boolean correctFrameFormat(String frame, String prefix, int prefixLen, String suffix, int suffixLen)
     {
@@ -284,6 +261,4 @@ public class MessageReceiver
         }
         return Integer.toString(total).substring(Integer.toString(total).length() - 2);
     }
-
-} // end of class MessageReceiver
-
+}
