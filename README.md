@@ -1,4 +1,4 @@
-# CO633-Computer_Networks_Assignments
+# CO633 Computer Networks Assignments
 
 A simple TCP/IP data-link protocol. This protocol incorporates solutions for framing, error detection, message segmentation and reassembly.
 
